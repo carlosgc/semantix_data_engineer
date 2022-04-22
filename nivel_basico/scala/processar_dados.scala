@@ -76,7 +76,7 @@ val visualizacao3 = tabela_covid.
     limit(1).
     withColumn(
         "Letalidade", 
-        (col("obitosAcumulado") / col("casosAcumulado")) * 100
+        col("obitosAcumulado") / col("casosAcumulado")
     ).
     withColumn(
         "Mortalidade", 
@@ -143,3 +143,25 @@ val visualizacao4 = tabela_covid.
 
 // Salvando a quarta visualização
 visualizacao4.write.mode(SaveMode.Overwrite).save("/user/covidbr/visualizacao4");
+
+tabela_covid.
+    where("regiao = 'Brasil'").
+    select("regiao", "populacaoTCU2019", "data", "casosAcumulado", "obitosAcumulado", "obitosNovos").
+    orderBy(col("data").desc).
+    withColumn(
+        "Letalidade", 
+        col("obitosAcumulado") / col("casosAcumulado")
+    ).
+    limit(2).
+    withColumn(
+        "Mortalidade", 
+        (col("obitosAcumulado") / col("populacaoTCU2019")) * 100000
+    ).
+    select(
+        col("obitosAcumulado").as("obitos_acumulados"),
+        col("obitosNovos").as("casos_novos"),
+        col("letalidade").as("letalidade"),
+        col("mortalidade").as("mortalidade"),
+        from_unixtime(unix_timestamp(col("data"), "yyyy-MM-dd"), "yyyy-MM-dd'T'HH:mm:ss").as("data")
+    ).
+    write.mode(SaveMode.Overwrite).json("/user/covidbr/visualizacao3_elastic");

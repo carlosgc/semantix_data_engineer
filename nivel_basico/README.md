@@ -123,7 +123,7 @@ val visualizacao3 = tabela_covid.
     limit(1).
     withColumn(
         "Letalidade", 
-        (col("obitosAcumulado") / col("casosAcumulado")) * 100
+        col("obitosAcumulado") / col("casosAcumulado")
     ).
     withColumn(
         "Mortalidade", 
@@ -209,18 +209,34 @@ visualizacao4.write.mode(SaveMode.Overwrite).save("/user/covidbr/visualizacao4")
 
 ### 8. Salvar a visualização do exercício 6 em um tópico no Elastic
 
-> Essa tarefa não está completa. Ela foi realizada copiando os dados da visualização três e inserindo o comando abaixo na ferramenta Dev Tools do Elastic. Entretando, ela seria melhor implementada utilizando uma integração entre o Spark e o Elastic. 
+Para enviar os dados para o Elastic, a terceira visualização foi recriada com algumas alterações e salva no formato json. Esse arquivo json foi utilizado para importar os dados no Elastic com a utilização do Data Visualizer do Kibana.
 
-```
-PUT covid_obitos_confirmados/_create/1
-{
-  "obitos_acumulados": 526892,
-  "casos_novos": 1780,
-  "letalidade": 2.794439569525667,
-  "mortalidade": 250.72529543290204
-}
+```scala
+tabela_covid.
+    where("regiao = 'Brasil'").
+    select("regiao", "populacaoTCU2019", "data", "casosAcumulado", "obitosAcumulado", "obitosNovos").
+    orderBy(col("data").desc).
+    withColumn(
+        "Letalidade", 
+        col("obitosAcumulado") / col("casosAcumulado")
+    ).
+    limit(2).
+    withColumn(
+        "Mortalidade", 
+        (col("obitosAcumulado") / col("populacaoTCU2019")) * 100000
+    ).
+    select(
+        col("obitosAcumulado").as("obitos_acumulados"),
+        col("obitosNovos").as("casos_novos"),
+        col("letalidade").as("letalidade"),
+        col("mortalidade").as("mortalidade"),
+        from_unixtime(unix_timestamp(col("data"), "yyyy-MM-dd"), "yyyy-MM-dd'T'HH:mm:ss").as("data")
+    ).
+    write.mode(SaveMode.Overwrite).json("/user/covidbr/visualizacao3_elastic");
 ```
 
 ### 9. Criar um dashboard no Elastic para visualização dos novos dados enviados
 
-> Essa tarefa está pendente. O tópico do Elastic onde foram inseridos os dados não ficou disponível na ferramenta Dashboard do Kibana para a criação do dashboard.
+Após o arquivo ser importado com o Kibana, foi utilizado a ferramenta Dashboard para criar a visualização dos novos dados importados. Essa visualização é mostrada na imagem abaixo:
+
+![Visualização dos dados de Óbitos confirmados](./elastic/dashboard_tarefa_9.png "Óbitos confirmados")
