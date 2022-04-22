@@ -1,0 +1,71 @@
+GET https://imunizacao-es.saude.gov.br/_search
+content-type: application/json
+Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
+
+{
+  "query": {
+    "range": {
+      "@timestamp": {
+        "gte": "2022-01-01",
+        "lte": "2022-03-01",
+        "format": "yyyy-MM-dd"
+      }
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "docs": {
+      "date_histogram": {
+        "field": "@timestamp",
+        "calendar_interval": "year"
+      }
+    }
+  }
+}
+
+###
+GET https://imunizacao-es.saude.gov.br/_search
+content-type: application/json
+Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "must_not": [
+              {
+                "exists": {
+                  "field": "dt_deleted"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "range": {
+            "vacina_dataAplicacao": {
+              "gte": "2021-01-01",
+              "lte": "2021-12-01",
+              "format": "yyyy-MM-dd"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "docs": {
+      "date_histogram": {
+        "field": "vacina_dataAplicacao",
+        "calendar_interval": "month"
+      }
+    }
+  }
+}
+
+###
+GET https://imunizacao-es.saude.gov.br/_count
+Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
