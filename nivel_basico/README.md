@@ -60,10 +60,27 @@ val covid_br = spark.read.
     csv("/user/covidbr/HIST_PAINEL_COVIDBR_06jul2021");
 
 // Seleção das colunas que serão salvas na tabela
-val covid_br_otimizado = covid_br.select("regiao", "estado", "municipio", "populacaoTCU2019", "data", "casosAcumulado", "casosNovos", "obitosAcumulado", "obitosNovos", "Recuperadosnovos", "emAcompanhamentoNovos");
+val covid_br_otimizado = covid_br.select(
+                                    "regiao",
+                                    "estado",
+                                    "municipio",
+                                    "populacaoTCU2019",
+                                    "data",
+                                    "casosAcumulado",
+                                    "casosNovos",
+                                    "obitosAcumulado",
+                                    "obitosNovos",
+                                    "Recuperadosnovos",
+                                    "emAcompanhamentoNovos"
+                                );
 
 // Criação de tabela particionada por estados e municípios
-covid_br_otimizado.write.mode(SaveMode.Overwrite).partitionBy("estado").bucketBy(8, "municipio").sortBy("municipio").saveAsTable("covid_br");
+covid_br_otimizado.write.
+    mode(SaveMode.Overwrite).
+    partitionBy("estado").
+    bucketBy(8, "municipio").
+    sortBy("municipio").
+    saveAsTable("covid_br");
 ```
 
 ### 3. Criar as 3 vizualizações pelo Spark com os dados enviados para o HDFS
