@@ -1,3 +1,7 @@
+GET https://imunizacao-es.saude.gov.br/_count
+Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
+
+###
 GET https://imunizacao-es.saude.gov.br/_search
 content-type: application/json
 Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
@@ -12,7 +16,7 @@ Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
       }
     }
   },
-  "size": 0,
+  "size": 1,
   "aggs": {
     "docs": {
       "date_histogram": {
@@ -46,8 +50,7 @@ Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
         {
           "range": {
             "vacina_dataAplicacao": {
-              "gte": "2021-01-01",
-              "lte": "2021-12-01",
+              "lte": "now",
               "format": "yyyy-MM-dd"
             }
           }
@@ -60,12 +63,141 @@ Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
     "docs": {
       "date_histogram": {
         "field": "vacina_dataAplicacao",
-        "calendar_interval": "month"
+        "calendar_interval": "day",
+        "order": {
+          "_key": "desc"
+        }
+      },
+      "aggs": {
+          "top2": {
+              "bucket_sort": {
+                  "sort": [],
+                  "size": 365
+              }
+          }
       }
     }
   }
 }
 
 ###
-GET https://imunizacao-es.saude.gov.br/_count
+GET https://imunizacao-es.saude.gov.br/_search
+content-type: application/json
 Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "must_not": [
+              {
+                "exists": {
+                  "field": "dt_deleted"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "range": {
+            "vacina_dataAplicacao": {
+              "lte": "now",
+              "gte": "now-6d",
+              "format": "yyyy-MM-dd"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "docs": {
+      "date_histogram": {
+        "field": "vacina_dataAplicacao",
+        "calendar_interval": "day",
+        "order": {
+          "_key": "desc"
+        }
+      },
+      "aggs": {
+        "group_by_uf": {
+          "terms": {
+              "field": "estabelecimento_uf",
+              "size": 30
+          }
+        },
+        "vacina_por_dia_acumulado": {
+          "cumulative_sum": {
+            "buckets_path": "_count" 
+          }
+        },
+        "uf_es": {
+          "filter": { 
+            "term": { "estabelecimento_uf": "ES" }
+          }
+        }
+      }
+    }
+  }
+}
+
+###
+GET https://imunizacao-es.saude.gov.br/_search
+content-type: application/json
+Authorization: Basic imunizacao_public qlto5t&7r_@+#Tlstigi
+
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "must_not": [
+              {
+                "exists": {
+                  "field": "dt_deleted"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "range": {
+            "vacina_dataAplicacao": {
+              "gte": "2020-01-01",
+              "format": "yyyy-MM-dd"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "size": 0,
+  "aggs": {
+    "docs": {
+      "date_histogram": {
+        "field": "vacina_dataAplicacao",
+        "calendar_interval": "day",
+        "order": {
+          "_key": "asc"
+        }
+      },
+      "aggs": {
+        "vacina_por_dia_acumulado": {
+          "cumulative_sum": {
+            "buckets_path": "_count" 
+          }
+        }
+      }
+    },
+    "total_by_uf": {
+      "terms": {
+          "field": "estabelecimento_uf",
+          "size": 30
+      }
+    }
+  }
+}
